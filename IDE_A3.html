@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+
+<head>
+	<title>The Trump Family Tree</title>
+    <style>
+        .ourCode {
+            font-family: Courier New, monospace;
+            font-size: 11;
+        }
+    
+    </style>
+	<script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="Tree.js"></script>
+    <script src="ForceLayout.js"></script>
+    <script>
+    d3.select(window).on('load', function(){ init1(); init2();})   
+    </script>
+
+</head>
+
+<body>
+    <h2 style="text-align: center">The Trump Family Tree</h2>
+    <h3> A Tree of descendants</h3>
+    <p> We created 2 visualizations for the Trump Family Tree. <br/>
+        The first one is simple to obtain: we modified the data from the JSON, so that it contains only <em>children</em> relationships and not <em>partners</em>. 
+    </p>
+    <p>We create a tree area with <tspan class="ourCode">d3.tree().nodeSize([110, 120])</tspan>. This way, we defined a node size that is appropriate to prevent overlaps. The overall size of the tree is determined as a consequence of the node size.</p>
+    <p>Since the data has already been modified manually, we can invoke directly <tspan class="ourCode">d3.hierarchy(data)</tspan> to build the node structure.</p>
+    <p>Observation : nodes are defined as groups, <tspan class="ourCode">&lt;g&gt;</tspan> of class <tspan class="ourCode">node</tspan>.Then, in this group we append the subelements <tspan class="ourCode">&lt;circle&gt;</tspan> and <tspan class="ourCode">&lt;text&gt;</tspan>. This structure is necessary because we can not insert text inside a <tspan class="ourCode">&lt;circle&gt;</tspan> element of SVG.</p>
+    Possible improvements: Node collapse ; Node dragging ; adding face images to the nodes.
+    <svg id="treeArea">
+    </svg>
+    
+    <h3>A Force Layout of family connections</h3>
+    <p>The second visualization is more complex; the Javascript code reads the JSON file, and visits the graph depth-first to determine the nodes and the edges.<br/>
+    The edges between partners are colored in magenta. The edges related to children are left in black. <br/>
+    The children are connected to the partners.
+    </p>
+    We hoped to achieve a radial layout, with Donald Trump in the middle, and the various partner-child connections spreading out in a circle.<br/>
+    The current visualization is quite tidy, but it is not radial. The specifications we used are:
+    <ul>
+        <li> <em>Link distance</em>: 30 for marriage links, 250 for child links. This specification interacts with the forces in the graph, and thus gets mostly overridden.
+        </li>
+        <li><em>The repulsive force between nodes</em>, defined with <tspan class="ourCode">d3.forceManyBody()</tspan>. Its strength varies depending on the node: for the root node, -500. For the nodes of the 1st generation partners, -2500. For the other nodes, -1000.</li>
+        <li> A <em>radial force</em> that pushes the nodes to be displayed on the perimeter of a circle, obtained with <tspan class="ourCode">d3.forceRadial</tspan>. <br/>
+            As we traversed the graph, we added to each node a <tspan class="ourCode">depth</tspan> attribute. The range of the circle where each element goes is <tspan class="ourCode">d.depth * 165</tspan>
+        </li>
+        <li> Finally, the force that pushes the whole layout towards the <em>center</em>, making it visible. The center of gravity is at: (1/3 width, 1/2 height)
+        </li>
+    </ul>
+    It is possible to drag the nodes around and eliminate any link overlap.<br/>
+    Possible improvements: Node collapse ; Achieving a radial layout ; adding face images to the nodes.
+    <svg id="graphArea">
+    </svg>
+
+</body>
+
+</html>
