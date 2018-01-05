@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+</head>
+<body>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+
+<script>
+    d3.select(window).on('load', init);
+    function init() {
+        d3.text('sf_crime.csv', function(error, raw_data){
+            var table = d3.csvParseRows(raw_data);
+            console.log(table);
+        });
+    }
+</script>
+</body>
+</html>
