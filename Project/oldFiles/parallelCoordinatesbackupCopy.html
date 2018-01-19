@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Graph2 : Parallel coordinates</title>
+    <style>
+
+        #pcPanel tspan{
+            border: 1px solid gray;
+            display: inline-block;
+            padding: 4px;
+            margin: 4px;
+        }
+        
+    </style>
+    
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="ParallelCoordinates.js"></script>
+    <script src="Utilities.js"></script>
+    
+    <script>
+    d3.select(window).on('load', init)
+        
+    function init(){
+    
+        d3.csv("AndersenBoulevard.csv", function(error, raw_stationdata) {
+            if (error) throw error;  
+            
+            stationdata = addDateAndTime(raw_stationdata)
+            stationdata = filterDataset(stationdata)
+            stationDataByDay = aggregateByDay(stationdata)
+            console.log(stationDataByDay)
+            
+        d3.csv("WeatherDataset.csv", function(error, raw_weatherdata) {
+            if (error) throw error;
+            
+            weatherdata = addDateAndTime(raw_weatherdata)
+            weatherdata = filterDataset(weatherdata)
+            
+            weatherDataByDay = aggregateByDay(weatherdata)
+            console.log(weatherDataByDay)
+            
+        
+            ////////// Specify width, height and margins of the SVG
+            var margin = {top: 30, right: 10, bottom: 10, left: 10};
+            var width = 0.6 * window.screen.width - margin.left - margin.right;
+            var height = 0.8 * width - margin.top - margin.bottom;
+            console.log("Width : " + width)
+            
+            pcSvg1 = d3.select("#parallCoord1")
+                            .attr("width", width + margin.left + margin.right)
+                            .attr("height", height + margin.top + margin.bottom)
+                            .style("border", "1px solid gray")
+                            .append("g")
+                                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            
+             pcSvg2 = d3.select("#parallCoord2")
+                            .attr("width", width + margin.left + margin.right)
+                            .attr("height", height + margin.top + margin.bottom)
+                            .style("border", "1px solid gray")
+                            .append("g")
+                                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            ////////////////////
+            
+            var weather_dimensions = Object.keys(weatherDataByDay[0].value);
+            console.log(weather_dimensions)
+            var air_dimensions = Object.keys(stationDataByDay[0].value);
+            
+            //var index = weather_dimensions.indexOf("Wind Speed");
+            //weather_dimensions.splice(index,1)
+            //console.log(air_dimensions)
+            //console.log(weather_dimensions)
+            
+            ////////// This function creates a parallel coordinates' graph
+            updatePC(width, height, pcSvg1, weatherDataByDay, weather_dimensions)
+            
+            weatherAndStation_data = joinDatasets(weatherDataByDay, stationDataByDay, "key")
+            console.log(weatherAndStation_data)
+            
+            weatherBoxes = d3.select('#pcPanel1')
+                .selectAll('g')
+                .data(weather_dimensions)
+                .enter()
+                .append('tspan')
+            weatherBoxes.append('input')
+                        .attr('type', 'checkbox')
+                        .attr('name', function(d, i){ return "wdim_"+i; })
+                        .attr('value', function(d) {return d})
+                        .attr('checked', 'true')
+                        .on('click', function(d){ 
+                                        examineCheckbox(d3.select(this).node(), d, weather_dimensions)
+                                        updatePC(width, height, pcSvg1, weatherDataByDay, weather_dimensions)})
+            weatherBoxes.append('label')
+                        .text(function(d) { return d})
+
+            
+            
+            
+            /////// The next PC graph allows us to visualize one weather variable and one air pollutant variable.
+            
+            weather_variable = "Wind Speed"
+            air_variable = "NO2"
+           
+            
+            weatherRadio = d3.select('#pcPanel2')
+                    .selectAll('.weatherButtonsSpan')
+                    .data(weather_dimensions)
+                    .enter()
+                    .append('tspan')
+                    .attr("class", "weatherButtonsSpan")
+            
+            weatherRadio.append('input')
+                        .attr('type', 'radio')
+                        .attr('name', "weatherPollutant")
+                        .attr('value', function(d) {return d})
+                        .on('click', function(d){ weather_variable = d
+                                                  updatePC(width, height, pcSvg2, weatherAndStation_data, [weather_variable , air_variable])
+                                        })
+            
+            weatherRadio.append('label')
+                        .text(function(d) { return d})
+            
+            
+            airRadio = d3.select('#pcPanel3')
+                    .selectAll('.airButtonsSpan')
+                    .data(air_dimensions)
+                    .enter()
+                    .append('tspan')
+                    .attr("class", "airButtonsSpan")
+            
+            airRadio.append('input')
+                        .attr('type', 'radio')
+                        .attr('name', "airPollutant")
+                        .attr('value', function(d) {return d})
+                        .on('click', function(d){ air_variable = d
+                                                  updatePC(width, height, pcSvg2, weatherAndStation_data, [weather_variable , air_variable])
+                                        })
+            
+            airRadio.append('label')
+                        .text(function(d) { return d})
+            
+            updatePC(width, height, pcSvg2, weatherAndStation_data, [weather_variable , air_variable])
+            
+//            ds1 =parseDate("02/01/18")
+//            console.log(ds1)
+//            d = new Date(ds1)
+//            console.log(d)
+//            ds2 =parseDate("01-12-17")
+//            d2 = new Date(ds2)
+            
+  });
+        })
+            
+            
+              
+            
+            
+        }
+        
+    </script>
+    
+</head>
+<body>
+    <div id="parallCoordSection">
+    <svg id="parallCoord1">
+    </svg>
+    <div id="pcPanel1"></div>
+    
+    <svg id="parallCoord2">
+    </svg>
+    <div id="pcPanel2"></div>
+    <div id="pcPanel3"></div>
+    </div>
+</body>
+
+</html>

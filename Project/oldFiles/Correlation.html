@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        #buttonsPanel {
+            margin: 0px;
+            padding: 15px;
+            border: 1px solid gray;
+            width: 930px;
+            height: 50px;
+        }
+
+        #buttonsPanel input {
+            display: inline-block;
+            margin: 5px;
+            border: 2px blue groove;
+            background-color: lightblue;
+        }
+
+        #cHistogram, #scatterPlot_svg {
+            border: 1px solid gray;
+        }
+        h1,h2,h3{
+            display: block;
+            margin-top: 0.67em;
+            margin-bottom: 0.67em;
+            margin-left: 0;
+            margin-right: 0;
+            font-family: "Comic Sans MS";
+        }
+
+        p,ol{
+            display: block;
+            font-size: medium;
+            margin-top: 0.67em;
+            margin-bottom: 0.67em;
+            margin-left: 0;
+            margin-right: 0;
+            padding: 15px;
+            font-weight: bold;
+            font-family: "Times New Roman";
+        }
+
+        ol{
+            margin-left: 12px;
+        }
+        .justified{
+            text-align: justify;
+        }
+
+
+
+    </style>
+    <title>Graph3: Correlation</title>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script type="text/javascript" src="math.js"></script>
+    <script src="Utilities.js"></script>
+    <script src="Correlation.js"></script>
+
+    <script>
+        d3.select(window).on('load', init)
+
+        function init() {
+            var width = 960,
+                height = 500;
+
+            var color = d3.scaleOrdinal("schemeCategory10");
+
+            d3.csv("AndersenBoulevard.csv", function (error, raw_stationdata) {
+
+                var stationdata = addDateAndTime(raw_stationdata)
+                var stationdata = filterDataset(stationdata)
+
+                var air_dimensions = Object.keys(stationdata[0]);
+                removeFromArray(air_dimensions, "Time")
+                removeFromArray(air_dimensions, "Date")
+                removeFromArray(air_dimensions, "Timestamp")
+
+                console.log(air_dimensions)
+
+                d3.csv("WeatherDataset.csv", function (error, raw_weatherdata) {
+                    var weatherdata = addDateAndTime(raw_weatherdata)
+                    var weatherdata = filterDataset(weatherdata)
+
+                    prejoin_stationData = d3.nest().key(function (d) {
+                        return d.Timestamp
+                    })
+                        .rollup(function (arr) {
+                            return arr[0]
+                        }).entries(stationdata)
+                    prejoin_weatherData = d3.nest().key(function (d) {
+                        return d.Timestamp
+                    })
+                        .rollup(function (arr) {
+                            return arr[0]
+                        }).entries(weatherdata)
+
+                    joinedDS = joinDatasets(prejoin_stationData, prejoin_weatherData, "key")
+                    weatherAndStation_data = joinedDS.map(function (elem) {
+                        return elem.value
+                    })
+
+                    console.log(weatherAndStation_data)
+
+                    var weather_dimensions = Object.keys(weatherdata[0]);
+                    removeFromArray(weather_dimensions, "Time")
+                    removeFromArray(weather_dimensions, "Date")
+                    removeFromArray(weather_dimensions, "Timestamp")
+
+
+                    allDims = air_dimensions.concat(weather_dimensions)
+                    corrs = []
+
+                    svg_2 = d3.select("#cHistogram")
+                    svg_2.attr("width", width)
+                        .attr("height", height);
+
+                    padding = 40;
+                    d3.select("#buttonsPanel")
+                        .selectAll('.histogramButton')
+                        .data(allDims)
+                        .enter()
+                        .append('input')
+                        .attr('class', 'histogramButton')
+                        .attr('type', 'button')
+                        .style("background-color","lightblue") //Phase 1
+                        .style("border-color","blue") //
+                        .attr('name', function (d) {
+                            return d;
+                        })
+                        .attr('id', function (d) {
+                            return d;
+                        })
+                        .attr('value', function (d) {
+                            return d;
+                        })
+                        .attr('border', '1px solid gray')
+                        .on("click", function () {
+                            d3.selectAll(".histogramButton")
+                                .style("background-color","lightblue") // Phase 2
+                                .style("border-color","blue") //
+                            d3.select(this)
+                                .style("background-color","yellow") // Phase 3
+                                .style("border-color","orange") //
+                            thisDim = this.getAttribute('value')
+                            createHistogram(width, height, thisDim, allDims, raw_stationdata);
+                        });
+
+                    createHistogram(width, height, "NO2", allDims, raw_stationdata)
+                    drawScatterplot("NO2", "CO", width, height, raw_stationdata)
+                })
+            })
+        };
+
+    </script>
+
+</head>
+<body>
+<h1 align="center">Correlation between air pollutants and weather factors</h1>
+<h3>Overview of the visualizations</h3>
+<p class="justified">This set of graphs explore the correlation between air pollutants and weather factors that are related to the environmental conditions
+    of Andersen Boulevard in the city of Copenhagen. We include data from a whole months, retrieving per 30 minutes a day. The whole page includes
+    three major parts, a button panel for all the air pollutants and weather factors, a bar chart showing the correlation coefficient between the
+    selected factor and all the other ones, and a scatter plot that plotted out the whole valid data from the data set with selected factor on x-axis and
+    another response factor on y-axis.</p>
+
+<h3>Short Introduction of understanding correlation</h3>
+<p>Pearson's correlation coefficient is the covariance of the two variables divided by the product of their standard deviations. The form of the definition
+    involves a "product moment", that is, the mean (the first moment about the origin) of the product of the mean-adjusted random variables; hence the modifier
+    product-moment in the name.</p>
+<h3><strong><em>How To Use:</em></strong></h3>
+<ol><li>Select one factor as an explanatory variable(the one on y-axis in a scatter plot) from the button panel and then the rest of the factors will be
+    automatically set as all the response variables(the one on y-axis in a scatter plot) as default.</li>
+    <li>The bar chart will show the user the correlation coefficients between the explanatory variable and the response variables.</li>
+    <li>When clicking on the bar, the full scatter plot between our explanatory variable and picked response variable will be presented.(If the bar is not
+        barely visible, try to click the text on the axis.)</li>
+</ol>
+<svg id="forCyclesPivot"></svg>
+<div id="buttonsPanel"></div>
+<div id="graphButton"></div>
+<svg id="cHistogram"></svg>
+<svg id="scatterPlot_svg"></svg>
+
+</body>
+</html>
