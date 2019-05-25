@@ -1,3 +1,3 @@
 
-Website built for the DATA VISUALIZATION course 
+Website built for the Interactive Data Exploration course 
 in the M.Sc. in Computer Science at KU
